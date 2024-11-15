@@ -10,7 +10,7 @@ pub async fn sync_assets(state: AppState, period: Duration) -> Result<(), Error>
     loop {
         interval.tick().await;
         let mut paths = tokio::fs::read_dir(&config().assets_dir).await.unwrap();
-        let mut assets = state.assets.write().await;
+        let mut assets = vec![];
         while let Some(entry) = paths.next_entry().await.unwrap() {
             let created = entry
                 .metadata()
@@ -27,6 +27,7 @@ pub async fn sync_assets(state: AppState, period: Duration) -> Result<(), Error>
             assets.push((created, entry.file_name().into_string().unwrap()));
         }
         assets.sort_by(|a, b| a.0.cmp(&b.0));
+        *state.assets.write().await = assets;
 
         tracing::info!("synced assets from dir {:?}", config().assets_dir);
     }

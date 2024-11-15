@@ -27,7 +27,7 @@ pub async fn upload_handler(
 ) -> impl IntoResponse {
     // Create uploads directory if it doesn't exist
     if let Err(err) = tokio::fs::create_dir_all(&config().assets_dir).await {
-        eprintln!("Failed to create upload directory: {}", err);
+        tracing::error!("Failed to create upload directory: {}", err);
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             "Failed to create upload directory",
@@ -58,14 +58,14 @@ pub async fn upload_handler(
                 .into_response();
         }
 
-        // Generate a unique filename to prevent overwrites
+        // Generate a filename to prevent overwrites
         let file_path = Path::new(&config().assets_dir).join(&file_name);
 
         // Read the file data
         let data = match field.bytes().await {
             Ok(data) => data,
             Err(err) => {
-                eprintln!("Failed to read file data: {}", err);
+                tracing::error!("Failed to read file data: {}", err);
                 return (StatusCode::BAD_REQUEST, "Failed to read file data").into_response();
             }
         };
@@ -74,18 +74,18 @@ pub async fn upload_handler(
         let file = match tokio::fs::File::create(&file_path).await {
             Ok(file) => file,
             Err(err) => {
-                eprintln!("Failed to create file: {}", err);
+                tracing::error!("Failed to create file: {}", err);
                 return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to save file").into_response();
             }
         };
 
         let mut writer = BufWriter::new(file);
         if let Err(err) = writer.write_all(&data).await {
-            eprintln!("Failed to write file: {}", err);
+            tracing::error!("Failed to write file: {}", err);
             return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to save file").into_response();
         }
 
-        println!("Successfully saved file: {}", file_name);
+        tracing::info!("Successfully saved file: {}", file_name);
         return (
             StatusCode::OK,
             format!("File uploaded successfully as {}", file_name),
