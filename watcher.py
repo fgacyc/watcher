@@ -33,16 +33,24 @@ def watch_directory(directory: str, cb):
             break
 
 
-def upload_file(filename: str, filetype: str, contents: bytes):
-    print(f"uploading {filename} with type {filetype}")
-    # TODO
-    print(f"uploaded {filename} with type {filetype}")
+def upload_file(filename: str, filepath: str):
+    print(f"uploading {filename}")
+    success, count = False, 0
+    while not success:
+        r = requests.post(url=f"https://assets.marcustut.me/upload", files={'file': (filename, open(filepath, 'rb'))})
+        if not r.ok:
+            count += 1
+            time.sleep(1)
+            if count == 5:
+                print("failed to upload, try again later")
+        else:
+            success = True
+    print(f"uploaded {filename}")
 
 
 def on_new_file(directory: str, new_file: str):
     print(f"New file detected: {directory}/{new_file}")
-    with open(os.path.join(directory, new_file), 'rb') as file:
-        upload_file(filename=new_file, filetype='img/jpeg', contents=file.read())
+    upload_file(filename=new_file, filepath=os.path.join(directory, new_file))
 
 
 if __name__ == "__main__":

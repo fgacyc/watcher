@@ -84,6 +84,7 @@ pub async fn upload_handler(
             tracing::error!("Failed to write file: {}", err);
             return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to save file").into_response();
         }
+        writer.flush().await.unwrap();
 
         tracing::info!("Successfully saved file: {}", file_name);
         return (
