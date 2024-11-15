@@ -1,9 +1,10 @@
-use std::{path::PathBuf, time::Duration};
+use std::time::Duration;
 
 use axum::{
-    routing::{get, patch, post},
+    routing::{get, post},
     Router,
 };
+use state::AppState;
 use tower_http::{
     cors::CorsLayer,
     services::ServeDir,
@@ -12,13 +13,12 @@ use tower_http::{
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use crate::{handler::*, state::AppState};
+// use crate::{handler::*, state::AppState};
 
 mod config;
-// mod handler;
-// mod state;
-// mod types;
-mod websocket;
+mod handler;
+mod job;
+mod state;
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 
@@ -42,15 +42,14 @@ fn main() {
     let rt = tokio::runtime::Runtime::new().expect("failed to start a tokio runtime");
 
     rt.block_on(async move {
-        let assets_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets");
+        let state = AppState::new();
 
-        let pool = sqlx::PgPool::connect(&config.database_url).await?;
-        let state = AppState::new(pool);
+        tokio::spawn(job::sync_assets(state.clone(), Duration::from_secs(5)));
 
         let router = Router::new()
-            .fallback_service(ServeDir::new(assets_dir))
-            .route("/ws", get(ws_handler))
-            .route("/assets", get(get_account_handler))
+            .fallback_service(ServeDir::new(&config.assets_dir))
+            .route("/assets", get(handler::assets_handler))
+            .route("/upload", post(handler::upload_handler))
             // Cross Origin Resource Sharing (CORS)
             .layer(CorsLayer::permissive())
             // Tracing for each HTTP request

@@ -15,7 +15,7 @@ futures-util = { version = "0.3", default-features = false, features = [
 async-trait = { version = "0.1" }
 
 # Web framework
-axum = { version = "0.7.5", features = ["ws", "macros"] }
+axum = { version = "0.7.5", features = ["ws", "macros", "multipart"] }
 axum-extra = { version = "0.9.3", features = ["typed-header"] }
 axum-client-ip = { version = "0.6.0" }
 hyper = { version = "1.1.0", features = [] }
