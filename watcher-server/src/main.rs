@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use axum::{
+    extract::DefaultBodyLimit,
     routing::{get, post},
     Router,
 };
@@ -50,6 +51,7 @@ fn main() {
             .fallback_service(ServeDir::new(&config.assets_dir))
             .route("/assets", get(handler::assets_handler))
             .route("/upload", post(handler::upload_handler))
+            .layer(DefaultBodyLimit::max(10 * 1024))
             // Cross Origin Resource Sharing (CORS)
             .layer(CorsLayer::permissive())
             // Tracing for each HTTP request
